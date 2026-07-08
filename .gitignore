@@ -22,8 +22,11 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Unreleased sessions -- release with: git add -f s02/ && git commit && git push
+# Solutions (released after each class): git add -f s0X/solution/ && git commit && git push
+# Sessions (released before each class): git add -f s0X/starter/ && git commit && git push
+s*/solution/
 s02/
+s03/
 
 data/seed.py
 data/ingest.py
