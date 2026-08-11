@@ -48,7 +48,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise ValueError("GROQ_API_KEY not found. Check your .env file.")
 
-MODEL_NAME  = "meta-llama/llama-4-scout-17b-16e-instruct"
+MODEL_NAME  = "openai/gpt-oss-120b"  # updated from llama-4-scout (no longer available)
 PASS_SCORE  = 3   # minimum judge score (out of 5) for a SIMPLE question to pass
 
 DATA_DIR     = Path(__file__).parent.parent / "data"

@@ -9,7 +9,10 @@ Nothing here makes API calls -- it's pure configuration.
 # Model settings (provided -- no changes needed)
 # ---------------------------------------------------------------------------
 
-MODEL_NAME  = "meta-llama/llama-4-scout-17b-16e-instruct"
+# Respond LLM — both models support tool calling via langchain-groq.
+# If one hits Groq rate limits mid-session, comment it out and uncomment the other.
+MODEL_NAME  = "openai/gpt-oss-120b"  # primary: higher daily token limit
+# MODEL_NAME  = "openai/gpt-oss-20b"  # fallback: 200k tokens/day ceiling
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300
 
