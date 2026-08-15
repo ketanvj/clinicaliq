@@ -95,15 +95,23 @@ def _services_respond(state: ClinicalIQState) -> dict:
 #       return builder.compile()
 # ---------------------------------------------------------------------------
 def create_doctors_agent():
-    raise NotImplementedError("TODO 1: implement create_doctors_agent()")
+    builder = StateGraph(ClinicalIQState)
+    builder.add_node("respond", _doctors_respond)
+    builder.set_entry_point("respond")
+    builder.add_edge("respond", END)
+    return builder.compile()
 
 
 def create_services_agent():
-    raise NotImplementedError("TODO 1: implement create_services_agent()")
+    builder = StateGraph(ClinicalIQState)
+    builder.add_node("respond", _services_respond)
+    builder.set_entry_point("respond")
+    builder.add_edge("respond", END)
+    return builder.compile()
 
 
-_doctors_agent  = None   # TODO 1: set to create_doctors_agent()
-_services_agent = None   # TODO 1: set to create_services_agent()
+_doctors_agent  = create_doctors_agent()
+_services_agent = create_services_agent()
 
 
 # ---------------------------------------------------------------------------
@@ -116,11 +124,35 @@ _services_agent = None   # TODO 1: set to create_services_agent()
 #      ("doctors_agent" or "services_agent")
 # ---------------------------------------------------------------------------
 def call_doctors_agent(state: ClinicalIQState) -> dict:
-    raise NotImplementedError("TODO 2: implement call_doctors_agent()")
+    result = _doctors_agent.invoke({
+        "customer_message": state["customer_message"],
+        "history":          state.get("history", []),
+        "response":         "",
+        "retrieved_docs":   [],
+        "specialist":       "",
+        "query_type":       state.get("query_type", ""),
+    })
+    return {
+        "response":   result["response"],
+        "history":    result["history"],
+        "specialist": "doctors_agent",
+    }
 
 
 def call_services_agent(state: ClinicalIQState) -> dict:
-    raise NotImplementedError("TODO 2: implement call_services_agent()")
+    result = _services_agent.invoke({
+        "customer_message": state["customer_message"],
+        "history":          state.get("history", []),
+        "response":         "",
+        "retrieved_docs":   [],
+        "specialist":       "",
+        "query_type":       state.get("query_type", ""),
+    })
+    return {
+        "response":   result["response"],
+        "history":    result["history"],
+        "specialist": "services_agent",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -172,4 +204,11 @@ def decline(state: ClinicalIQState) -> dict:
 #   default       → "call_services_agent"
 # ---------------------------------------------------------------------------
 def route_supervisor(state: ClinicalIQState) -> str:
-    raise NotImplementedError("TODO 3: implement route_supervisor()")
+    qt = state.get("query_type", "SERVICES")
+    if qt == "DOCTORS":
+        return "call_doctors_agent"
+    if qt == "COMPLEX":
+        return "escalate"
+    if qt == "OUT_OF_SCOPE":
+        return "decline"
+    return "call_services_agent"

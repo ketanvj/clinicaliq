@@ -24,8 +24,7 @@ from typing import TypedDict
 # ---------------------------------------------------------------------------
 
 class ClinicalIQState(TypedDict):
-    customer_message: str
-    response:         str
+    pass  # TODO 3: replace this line with the two field definitions
 
 
 # Guard: raises at import time if the fields haven't been defined yet.

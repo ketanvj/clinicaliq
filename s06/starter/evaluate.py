@@ -133,8 +133,15 @@ def load_dataset(path: Path) -> list[dict]:
            f"Golden dataset item {i} (id={item.get('id', '?')}) is missing fields: {missing}"
       5. Return the dataset list.
     """
-    # TODO 1: implement dataset loading and validation
-    raise NotImplementedError("TODO 1: implement load_dataset")
+    with open(path, encoding="utf-8") as f:
+        dataset = json.load(f)
+    for i, item in enumerate(dataset):
+        missing = REQUIRED_FIELDS - set(item.keys())
+        if missing:
+            raise ValueError(
+                f"Golden dataset item {i} (id={item.get('id', '?')}) is missing fields: {missing}"
+            )
+    return dataset
 
 
 # ---------------------------------------------------------------------------
@@ -164,8 +171,19 @@ def parse_judge_response(output: str) -> tuple[int, str]:
            - Split on ":" once, strip, assign to reason.
       5. Return (score, reason).
     """
-    # TODO 2: implement judge output parsing
-    raise NotImplementedError("TODO 2: implement parse_judge_response")
+    score  = 0
+    reason = "Could not parse judge output"
+    for line in output.strip().splitlines():
+        line = line.strip()
+        if line.upper().startswith("SCORE:"):
+            try:
+                raw   = int(line.split(":", 1)[1].strip())
+                score = max(1, min(5, raw))
+            except ValueError:
+                pass
+        elif line.upper().startswith("REASON:"):
+            reason = line.split(":", 1)[1].strip()
+    return score, reason
 
 
 # ---------------------------------------------------------------------------
@@ -198,8 +216,35 @@ def evaluate_response(item: dict, result: dict) -> dict:
            - passed = route_correct and score >= PASS_SCORE and not forbidden_found
       9. Return a dict with all 11 keys listed above.
     """
-    # TODO 3: implement response evaluation
-    raise NotImplementedError("TODO 3: implement evaluate_response")
+    actual_route   = result.get("query_type", "UNKNOWN")
+    response       = result.get("response", "")
+    route_correct  = (actual_route == item["expected_route"])
+    criteria       = item.get("criteria", [])
+    must_not       = item.get("must_not_contain", [])
+    criteria_met   = all(c.lower() in response.lower() for c in criteria)
+    forbidden_found = [f for f in must_not if f.lower() in response.lower()]
+
+    if item["expected_route"] in ("COMPLEX", "OUT_OF_SCOPE"):
+        score  = 5 if criteria_met else 1
+        reason = "Canned response criteria met." if criteria_met else "Canned response keyword missing."
+        passed = route_correct and criteria_met and not forbidden_found
+    else:
+        score, reason = llm_judge(item["query"], criteria, response)
+        passed = route_correct and score >= PASS_SCORE and not forbidden_found
+
+    return {
+        "id":             item["id"],
+        "query":          item["query"],
+        "category":       item["category"],
+        "expected_route": item["expected_route"],
+        "actual_route":   actual_route,
+        "route_correct":  route_correct,
+        "score":          score,
+        "reason":         reason,
+        "forbidden_found": forbidden_found,
+        "passed":         passed,
+        "response":       response,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -254,8 +299,47 @@ def generate_report(results: list[dict]) -> dict:
       5. Return dict with: total, passed, failed, pass_rate, average_score,
          by_category, failures.
     """
-    # TODO 4: implement report generation
-    raise NotImplementedError("TODO 4: implement generate_report")
+    total   = len(results)
+    passed  = sum(r["passed"] for r in results)
+    failed  = total - passed
+
+    simple_scores = [
+        r["score"] for r in results
+        if r["category"] not in ("complex", "oos") and r["score"] > 0
+    ]
+    avg_score = round(sum(simple_scores) / len(simple_scores), 2) if simple_scores else 0.0
+
+    by_category: dict = {}
+    for r in results:
+        cat = r["category"]
+        if cat not in by_category:
+            by_category[cat] = {"total": 0, "passed": 0}
+        by_category[cat]["total"]  += 1
+        by_category[cat]["passed"] += int(r["passed"])
+    for cat in by_category:
+        t = by_category[cat]["total"]
+        by_category[cat]["pass_rate"] = by_category[cat]["passed"] / t if t else 0.0
+
+    failures = [
+        {
+            "id":           r["id"],
+            "query":        r["query"],
+            "reason":       r["reason"],
+            "score":        r["score"],
+            "actual_route": r["actual_route"],
+        }
+        for r in results if not r["passed"]
+    ]
+
+    return {
+        "total":         total,
+        "passed":        passed,
+        "failed":        failed,
+        "pass_rate":     passed / total if total else 0.0,
+        "average_score": avg_score,
+        "by_category":   by_category,
+        "failures":      failures,
+    }
 
 
 def print_report(report: dict) -> None:

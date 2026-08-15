@@ -13,18 +13,4 @@ class ClinicalIQState(TypedDict):
     customer_message: str    # the question the patient typed
     response:         str    # the answer ClinicalIQ will return
 
-    # -----------------------------------------------------------------------
-    # TODO 2 of 4 -- Add the history field
-    # -----------------------------------------------------------------------
-    # Add one more field to track the conversation so far:
-    #
-    #   history : list[dict]
-    #       Each dict has two keys:
-    #           {"role": "user",      "content": "..."}
-    #           {"role": "assistant", "content": "..."}
-    #
-    # The respond() node will read this to build a full message list,
-    # then append the new turn before returning it.
-    #
-    # -----------------------------------------------------------------------
-    # TODO: add  history: list[dict]
+    history:          list[dict]

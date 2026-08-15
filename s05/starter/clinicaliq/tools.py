@@ -70,8 +70,26 @@ def query_doctors(specialty: str = "all") -> str:
 
     Returns formatted doctor information as a plain-text string.
     """
-    # TODO: implement this tool
-    pass
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    if specialty.lower() == "all":
+        rows = conn.execute(
+            "SELECT name, specialty, available_days, consultation_fee "
+            "FROM doctors ORDER BY specialty"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT name, specialty, available_days, consultation_fee "
+            "FROM doctors WHERE specialty LIKE ? ORDER BY name",
+            (f"%{specialty}%",),
+        ).fetchall()
+    conn.close()
+    if not rows:
+        return f"No doctors found for specialty: '{specialty}'."
+    parts = [
+        f"{name} ({spec})\n  Available: {days} | Fee: Rs. {fee}"
+        for name, spec, days, fee in rows
+    ]
+    return "\n\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -104,8 +122,22 @@ def query_services(department: str = "all") -> str:
 
     Returns formatted service and price information as a plain-text string.
     """
-    # TODO: implement this tool
-    pass
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    if department.lower() == "all":
+        rows = conn.execute(
+            "SELECT name, department, price FROM services ORDER BY department, price"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT name, department, price FROM services "
+            "WHERE department LIKE ? ORDER BY price",
+            (f"%{department}%",),
+        ).fetchall()
+    conn.close()
+    if not rows:
+        return f"No services found for department: '{department}'."
+    lines = [f"{name} ({dept}): Rs. {price}" for name, dept, price in rows]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------
@@ -118,7 +150,7 @@ def query_services(department: str = "all") -> str:
 # llm_with_tools is used for the FIRST call in respond(). The second call
 # (after tools have run) uses plain llm.
 # ---------------------------------------------------------------------------
-# TODO: add llm_with_tools = llm.bind_tools([query_doctors, query_services])
+llm_with_tools = llm.bind_tools([query_doctors, query_services])
 
 
 def _run_tool(tool_name: str, tool_args: dict) -> str:

@@ -15,28 +15,19 @@ from .tools import classifier_llm, llm
 
 def classify(state: ClinicalIQState) -> dict:
     """Classify the patient question into SIMPLE, COMPLEX, or OUT_OF_SCOPE."""
-    # -----------------------------------------------------------------------
-    # TODO 2 of 4 -- Implement classify()
-    # -----------------------------------------------------------------------
-    # 1. Build the message list for the classifier LLM:
-    #      messages = [
-    #          SystemMessage(content=CLASSIFY_SYSTEM),
-    #          HumanMessage(content=state["customer_message"]),
-    #      ]
-    #
-    # 2. Call classifier_llm.invoke(messages) inside a try/except:
-    #      On success:
-    #        query_type = result.content.strip().upper()
-    #        if query_type not in {"SIMPLE", "COMPLEX", "OUT_OF_SCOPE"}:
-    #            query_type = "SIMPLE"
-    #      On exception:
-    #        print(f"[ClinicalIQ] Classification error: {e}")
-    #        query_type = "SIMPLE"
-    #
-    # 3. Return {"query_type": query_type}
-    # -----------------------------------------------------------------------
-    # TODO: implement this node
-    pass
+    messages = [
+        SystemMessage(content=CLASSIFY_SYSTEM),
+        HumanMessage(content=state["customer_message"]),
+    ]
+    try:
+        result     = classifier_llm.invoke(messages)
+        query_type = result.content.strip().upper()
+        if query_type not in {"SIMPLE", "COMPLEX", "OUT_OF_SCOPE"}:
+            query_type = "SIMPLE"
+    except Exception as e:
+        print(f"[ClinicalIQ] Classification error: {e}")
+        query_type = "SIMPLE"
+    return {"query_type": query_type}
 
 
 def respond(state: ClinicalIQState) -> dict:
@@ -84,15 +75,9 @@ def decline(state: ClinicalIQState) -> dict:
 
 def route_query(state: ClinicalIQState) -> str:
     """Read query_type and return the name of the next node."""
-    # -----------------------------------------------------------------------
-    # TODO 3 of 4 -- Implement route_query()
-    # -----------------------------------------------------------------------
-    # Read the query type and route accordingly:
-    #   if query_type == "COMPLEX":      return "escalate"
-    #   if query_type == "OUT_OF_SCOPE": return "decline"
-    #   otherwise:                        return "respond"
-    #
-    # Use state.get("query_type", "SIMPLE") to read safely.
-    # -----------------------------------------------------------------------
-    # TODO: implement this function
-    pass
+    qt = state.get("query_type", "SIMPLE")
+    if qt == "COMPLEX":
+        return "escalate"
+    if qt == "OUT_OF_SCOPE":
+        return "decline"
+    return "respond"

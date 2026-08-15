@@ -9,13 +9,5 @@ import os
 
 os.environ.setdefault("HF_HUB_VERBOSITY", "error")
 
-# ---------------------------------------------------------------------------
-# TODO 1 of 4 -- Environment setup
-# ---------------------------------------------------------------------------
-# Same as Session 1: import and call load_dotenv() so GROQ_API_KEY is
-# available before tools.py tries to read it.
-#
-#   from dotenv import load_dotenv
-#   load_dotenv()
-#
-# ---------------------------------------------------------------------------
+from dotenv import load_dotenv
+load_dotenv()
