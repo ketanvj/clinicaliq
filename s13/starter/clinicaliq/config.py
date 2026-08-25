@@ -10,7 +10,7 @@ if not GROQ_API_KEY:
         "  Mac/Linux: cp .env.example .env"
     )
 
-MODEL_NAME  = "meta-llama/llama-4-scout-17b-16e-instruct"
+MODEL_NAME  = "openai/gpt-oss-120b"  # updated from llama-4-scout (removed from Groq)
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300
 

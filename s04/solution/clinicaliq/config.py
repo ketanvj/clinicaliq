@@ -4,7 +4,7 @@ from pathlib import Path
 # If one hits Groq rate limits mid-session, comment it out and uncomment the other.
 MODEL_NAME  = "openai/gpt-oss-120b"  # primary: higher daily token limit
 # MODEL_NAME  = "openai/gpt-oss-20b"  # fallback: 200k tokens/day ceiling
-CLASSIFIER_MODEL      = "llama-3.1-8b-instant"
+CLASSIFIER_MODEL      = "groq/compound-mini"
 CLASSIFIER_MAX_TOKENS = 10
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300
