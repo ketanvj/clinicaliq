@@ -21,6 +21,7 @@ S6 and S9 exclusion (ClinicalIQ-specific):
   wall-blocked with a generic "I can only assist with clinic services" message.
   Blocking vulnerable patients (S9) is actively harmful.
 """
+import base64
 import re
 import unicodedata
 from typing import Callable, Optional
@@ -59,6 +60,32 @@ _INVISIBLE_UNICODE_RE = re.compile(
 # ---------------------------------------------------------------------------
 # S14b: Input Guard
 # ---------------------------------------------------------------------------
+
+def _try_decode(text: str) -> str:
+    """Decode Base64 or hex-encoded text before guard checks.
+    Catches obfuscation attacks like base64("ignore previous instructions").
+    Returns decoded text if decoding succeeds and changes the input; original text otherwise.
+    """
+    stripped = text.strip()
+    # Base64
+    try:
+        padding = (4 - len(stripped) % 4) % 4
+        decoded = base64.b64decode(stripped + "=" * padding).decode("utf-8", errors="strict")
+        if decoded != stripped and len(decoded) >= 8 and decoded.isprintable():
+            return decoded
+    except Exception:
+        pass
+    # Hex
+    try:
+        hex_clean = stripped.replace(" ", "")
+        if len(hex_clean) >= 16 and all(c in "0123456789abcdefABCDEF" for c in hex_clean):
+            decoded = bytes.fromhex(hex_clean).decode("utf-8", errors="strict")
+            if decoded.isprintable():
+                return decoded
+    except Exception:
+        pass
+    return text
+
 
 def _llamaguard_safe(message: str) -> bool:
     """Call LlamaGuard 3 8B and return True if the message is safe.
@@ -116,6 +143,11 @@ def guard(state: ClinicalIQState) -> dict:
     """
     raw = state["customer_message"]
     msg = unicodedata.normalize("NFKD", _INVISIBLE_UNICODE_RE.sub("", raw))
+
+    decoded = _try_decode(msg)
+    if decoded != msg:
+        print(f"[ClinicalIQ] Guard: obfuscated input decoded ({len(msg)}→{len(decoded)} chars)")
+        msg = decoded
 
     for rx in _pii_compiled:
         if rx.search(msg):

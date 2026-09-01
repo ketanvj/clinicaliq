@@ -12,6 +12,7 @@ import sys
 
 from langchain_groq import ChatGroq
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from pydantic import BaseModel, field_validator
 
 from .config import (
     CLASSIFIER_MAX_TOKENS,
@@ -84,6 +85,18 @@ _tool_registry = {t.name: t for t in mcp_tools}
 llm_with_tools = llm.bind_tools(mcp_tools)
 
 
+class ToolResponse(BaseModel):
+    content: str
+    is_error: bool = False
+
+    @field_validator("content")
+    @classmethod
+    def must_be_non_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("tool response is empty")
+        return v.strip()
+
+
 def _extract_text(result) -> str:
     if isinstance(result, list):
         return "\n".join(
@@ -96,7 +109,12 @@ def _run_tool(tool_name: str, tool_args: dict) -> str:
     if tool_name not in _tool_registry:
         return f"Unknown tool: {tool_name}"
     try:
-        result = asyncio.run(_tool_registry[tool_name].ainvoke(tool_args))
-        return _extract_text(result)
+        raw  = asyncio.run(_tool_registry[tool_name].ainvoke(tool_args))
+        text = _extract_text(raw)
+        try:
+            return ToolResponse(content=text).content
+        except Exception as ve:
+            print(f"[ClinicalIQ] Tool response validation failed ({tool_name}): {ve}")
+            return f"Tool returned invalid response: {tool_name}"
     except Exception as e:
-        return f"Tool error ({tool_name}): {e}"
+        return f"Error executing tool {tool_name}: {e}"

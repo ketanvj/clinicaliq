@@ -5,6 +5,8 @@ Streamlit chat UI for ClinicalIQ — Apollo Health Clinic's AI patient assistant
 
 Session 14b: LlamaGuard 3 8B — no llamaguard_score in state or guard badge.
 """
+import hashlib
+import re as _re
 import sys
 import time
 from pathlib import Path
@@ -12,6 +14,22 @@ from uuid import uuid4
 
 import streamlit as st
 from dotenv import load_dotenv
+
+_SCRIPT_RE  = _re.compile(r"<script[^>]*>.*?</script>", _re.IGNORECASE | _re.DOTALL)
+_STYLE_RE   = _re.compile(r"<style[^>]*>.*?</style>",  _re.IGNORECASE | _re.DOTALL)
+_HTML_TAG_RE = _re.compile(r"<[^>]+>")
+
+
+def _sanitise(text: str) -> str:
+    """Strip script/style blocks and all HTML tags from LLM response before rendering."""
+    text = _SCRIPT_RE.sub("", text)
+    text = _STYLE_RE.sub("", text)
+    return _HTML_TAG_RE.sub("", text)
+
+
+def _pseudonymise(raw: str) -> str:
+    """SHA-256 one-way hash of raw session UUID. Raw UUID never stored or traced."""
+    return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 sys.path.insert(0, str(Path(__file__).parent))
 load_dotenv()
@@ -99,7 +117,7 @@ def _init_session() -> None:
     if "graph" not in st.session_state:
         from langgraph.checkpoint.memory import MemorySaver
         st.session_state.graph     = build_graph(checkpointer=MemorySaver())
-        st.session_state.thread_id = str(uuid4())
+        st.session_state.thread_id = _pseudonymise(str(uuid4()))
         st.session_state.messages  = []
         st.session_state.routes    = []
 
@@ -179,7 +197,7 @@ def main() -> None:
         finally:
             _nodes._stream_callback = None
 
-        response    = result["response"]
+        response    = _sanitise(result["response"])
         route_label = format_route_label(result)
 
         if is_escalated(result):
