@@ -3,7 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - HTTP_PROXY=${HTTP_PROXY:-}
+        - HTTPS_PROXY=${HTTPS_PROXY:-}
     container_name: clinicaliq
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     ports:
       - "8501:8501"
     env_file:
