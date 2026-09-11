@@ -67,10 +67,20 @@ _INVISIBLE_UNICODE_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 def _llamaguard_safe(message: str) -> bool:
-    # TODO: invoke llamaguard_llm, parse "safe" or "unsafe\nS<n>" verdict
-    # Exclude S6 and S9 — they are handled by COMPLEX routing in this clinic agent
-    # Fail-open on exception: return True
-    raise NotImplementedError("Implement _llamaguard_safe for LlamaGuard 3 8B")
+    try:
+        result  = llamaguard_llm.invoke([HumanMessage(content=message)])
+        verdict = result.content.strip().lower()
+        if verdict == "safe":
+            return True
+        # e.g. "unsafe\ns1,s6" or "unsafe\ns13"
+        categories = set()
+        if "\n" in verdict:
+            codes = verdict.split("\n", 1)[1]
+            categories = {c.strip() for c in codes.split(",") if c.strip()}
+        excluded = {"s6", "s9"}
+        return not bool(categories - excluded)
+    except Exception:
+        return True
 
 
 # ---------------------------------------------------------------------------

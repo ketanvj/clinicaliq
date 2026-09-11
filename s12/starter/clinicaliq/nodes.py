@@ -198,10 +198,19 @@ def route_compliance(state: ClinicalIQState) -> str:
 #       return builder.compile()
 # ---------------------------------------------------------------------------
 def create_compliance_agent():
-    raise NotImplementedError("TODO 1: implement create_compliance_agent()")
+    builder = StateGraph(ClinicalIQState)
+    builder.add_node("check_medical", check_medical)
+    builder.add_node("revise",        revise_response)
+    builder.set_entry_point("check_medical")
+    builder.add_conditional_edges(
+        "check_medical", route_compliance,
+        {"revise": "revise", END: END},
+    )
+    builder.add_edge("revise", END)
+    return builder.compile()
 
 
-_compliance_agent = None  # TODO 1: set to create_compliance_agent()
+_compliance_agent = create_compliance_agent()
 
 
 # ---------------------------------------------------------------------------
@@ -293,7 +302,20 @@ def call_services_agent(state: ClinicalIQState) -> dict:
 #       }
 # ---------------------------------------------------------------------------
 def call_compliance_agent(state: ClinicalIQState) -> dict:
-    raise NotImplementedError("TODO 2: implement call_compliance_agent()")
+    print("[ClinicalIQ] Supervisor -> Compliance Agent")
+    result = _compliance_agent.invoke({
+        "customer_message":  state["customer_message"],
+        "response":          state["response"],
+        "history":           state.get("history", []),
+        "query_type":        state.get("query_type", ""),
+        "retrieved_docs":    state.get("retrieved_docs", []),
+        "specialist":        state.get("specialist", ""),
+        "compliance_status": "",
+    })
+    return {
+        "response":          result["response"],
+        "compliance_status": result.get("compliance_status", "PASS"),
+    }
 
 
 def escalate(state: ClinicalIQState) -> dict:
