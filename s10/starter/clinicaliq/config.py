@@ -12,8 +12,8 @@ if not GROQ_API_KEY:
 
 # Respond LLM — both models support tool calling via langchain-groq.
 # If one hits Groq rate limits mid-session, comment it out and uncomment the other.
-MODEL_NAME  = "openai/gpt-oss-120b"  # primary: higher daily token limit
-# MODEL_NAME  = "openai/gpt-oss-20b"  # fallback: 200k tokens/day ceiling
+MODEL_NAME  = "openai/gpt-oss-120b"  # primary
+# MODEL_NAME  = "openai/gpt-oss-20b"  # fallback
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300
 
@@ -124,4 +124,4 @@ VECTORSTORE_DIR = DATA_DIR / "vectorstore"
 EMBED_MODEL     = "all-MiniLM-L6-v2"
 RETRIEVAL_K     = 2
 
-MCP_SERVER_PATH = Path(__file__).parent.parent.parent.parent / "s07" / "solution" / "mcp_server.py"
+MCP_SERVER_PATH = Path(__file__).parent.parent.parent.parent / "s07" / "starter" / "mcp_server.py"

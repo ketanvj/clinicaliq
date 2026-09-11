@@ -24,16 +24,7 @@ def build_graph(checkpointer=None):
     builder = StateGraph(ClinicalIQState)
 
     builder.add_node("classify",      classify)
-    # ---------------------------------------------------------------------------
-    # TODO 4 of 4 -- Add the retrieve_docs node and wire it to respond
-    # ---------------------------------------------------------------------------
-    # 1. Add the node:
-    #      builder.add_node("retrieve_docs", retrieve_docs)
-    #
-    # 2. After adding conditional edges from "classify", also add:
-    #      builder.add_edge("retrieve_docs", "respond")
-    #
-    # (Also update route_query in nodes.py to return "retrieve_docs" for SIMPLE.)
+    builder.add_node("retrieve_docs", retrieve_docs)
     # ---------------------------------------------------------------------------
     builder.add_node("respond",       respond)
     builder.add_node("escalate",      escalate)
@@ -46,7 +37,7 @@ def build_graph(checkpointer=None):
         "decline":       "decline",
     })
 
-    # TODO: add builder.add_edge("retrieve_docs", "respond") here
+    builder.add_edge("retrieve_docs", "respond")
     builder.add_edge("respond",       END)
     builder.add_edge("escalate",      END)
     builder.add_edge("decline",       END)

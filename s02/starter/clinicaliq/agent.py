@@ -21,20 +21,15 @@ from .nodes import respond
 from .state import ClinicalIQState
 
 
-# ---------------------------------------------------------------------------
-# TODO 4 of 4 -- Build the graph with checkpointer support
-# ---------------------------------------------------------------------------
-# def build_graph(checkpointer=None):
-#     builder = StateGraph(ClinicalIQState)
-#     builder.add_node("respond", respond)
-#     builder.set_entry_point("respond")
-#     builder.add_edge("respond", END)
-#     return builder.compile(checkpointer=checkpointer)
-#
-# ---------------------------------------------------------------------------
-# TODO: uncomment the function above, then delete these two placeholder lines
 def build_graph(checkpointer=None):
-    raise NotImplementedError("TODO 4: implement build_graph() in clinicaliq/agent.py")
+    from langgraph.checkpoint.memory import MemorySaver
+    builder = StateGraph(ClinicalIQState)
+    builder.add_node("respond", respond)
+    builder.set_entry_point("respond")
+    builder.add_edge("respond", END)
+    if checkpointer is None:
+        checkpointer = MemorySaver()
+    return builder.compile(checkpointer=checkpointer)
 
 
 graph = build_graph()

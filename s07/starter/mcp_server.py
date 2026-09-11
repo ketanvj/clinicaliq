@@ -64,19 +64,26 @@ def query_doctors(specialty: str = "all") -> str:
 
     Returns formatted doctor information as a plain-text string.
     """
-    # TODO 1: Connect to DB_PATH with sqlite3.connect()
-    # If specialty.lower() == "all":
-    #   SELECT name, specialty, available_days, consultation_fee
-    #   FROM doctors ORDER BY specialty
-    # Else (filter by specialty):
-    #   SELECT name, specialty, available_days, consultation_fee
-    #   FROM doctors WHERE specialty LIKE ? ORDER BY name
-    #   Pass (f"%{specialty}%",) as the parameter -- never interpolate into the SQL string
-    # If no rows found: return f"No doctors found for specialty: '{specialty}'."
-    # Format each doctor as:
-    #   f"{name} ({spec})\n  Available: {days} | Fee: Rs. {fee}"
-    # Return doctors joined by "\n\n"
-    raise NotImplementedError("TODO 1: implement the SQL queries for query_doctors()")
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    if specialty.lower() == "all":
+        rows = conn.execute(
+            "SELECT name, specialty, available_days, consultation_fee "
+            "FROM doctors ORDER BY specialty"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT name, specialty, available_days, consultation_fee "
+            "FROM doctors WHERE specialty LIKE ? ORDER BY name",
+            (f"%{specialty}%",),
+        ).fetchall()
+    conn.close()
+    if not rows:
+        return f"No doctors found for specialty: '{specialty}'."
+    parts = [
+        f"{name} ({spec})\n  Available: {days} | Fee: Rs. {fee}"
+        for name, spec, days, fee in rows
+    ]
+    return "\n\n".join(parts)
 
 
 # ---------------------------------------------------------------------------
@@ -95,17 +102,22 @@ def query_services(department: str = "all") -> str:
 
     Returns formatted service and price information as a plain-text string.
     """
-    # TODO 2: Connect to DB_PATH with sqlite3.connect()
-    # If department.lower() == "all":
-    #   SELECT name, department, price FROM services ORDER BY department, price
-    # Else (filter by department):
-    #   SELECT name, department, price FROM services
-    #   WHERE department LIKE ? ORDER BY price
-    #   Pass (f"%{department}%",) as the parameter
-    # If no rows found: return f"No services found for department: '{department}'."
-    # Format each row as: f"{name} ({dept}): Rs. {price}"
-    # Return lines joined by "\n"
-    raise NotImplementedError("TODO 2: implement the SQL queries for query_services()")
+    conn = sqlite3.connect(str(DB_PATH), check_same_thread=False)
+    if department.lower() == "all":
+        rows = conn.execute(
+            "SELECT name, department, price FROM services ORDER BY department, price"
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT name, department, price FROM services "
+            "WHERE department LIKE ? ORDER BY price",
+            (f"%{department}%",),
+        ).fetchall()
+    conn.close()
+    if not rows:
+        return f"No services found for department: '{department}'."
+    lines = [f"{name} ({dept}): Rs. {price}" for name, dept, price in rows]
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

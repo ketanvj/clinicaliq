@@ -35,3 +35,7 @@ Each session folder has a `CLAUDE_CODE_PROMPTS.md` with ready-to-use prompts for
 
 - PRD: `clinicaliq-prd.md`
 - Glossary: `ai-glossary.md`
+
+
+## run
+python -m clinicaliq.agent

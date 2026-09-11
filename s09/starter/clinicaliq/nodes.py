@@ -68,7 +68,11 @@ def _normalize_for_check(text: str) -> str:
 # ---------------------------------------------------------------------------
 @traceable(name="medical_compliance_check")
 def _check_compliance(draft: str) -> tuple:
-    raise NotImplementedError("TODO 1: implement _check_compliance()")
+    normalized = _normalize_for_check(draft)
+    match = _BANNED_PATTERN.search(normalized)
+    if match:
+        return False, f"banned phrase: '{match.group()}'"
+    return True, "PASS"
 
 
 # ---------------------------------------------------------------------------
@@ -85,7 +89,12 @@ def _check_compliance(draft: str) -> tuple:
 #        return {"compliance_status": "PASS"}
 # ---------------------------------------------------------------------------
 def check_compliance(state: ClinicalIQState) -> dict:
-    raise NotImplementedError("TODO 2: implement check_compliance() node")
+    passed, reason = _check_compliance(state["response"])
+    if not passed:
+        print(f"[ClinicalIQ] Compliance FAIL: {reason}")
+        return {"response": SAFE_COMPLIANCE_RESPONSE, "compliance_status": f"FAIL: {reason}"}
+    print("[ClinicalIQ] Compliance PASS")
+    return {"compliance_status": "PASS"}
 
 
 def _init_vectorstore() -> None:

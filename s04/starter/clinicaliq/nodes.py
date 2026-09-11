@@ -65,25 +65,19 @@ def retrieve_docs(state: ClinicalIQState) -> dict:
     vectorstore.similarity_search() returns LangChain Document objects.
     Each Document has .page_content (the text) and .metadata (dict with 'source').
     """
-    # -----------------------------------------------------------------------
-    # TODO 2 of 4 -- Implement retrieve_docs()
-    # -----------------------------------------------------------------------
-    # 1. Call _init_vectorstore() to ensure the vectorstore is loaded.
-    #
-    # 2. If vectorstore is None (ingest.py not yet run), return {"retrieved_docs": []}.
-    #
-    # 3. Inside a try/except block:
-    #      docs = vectorstore.similarity_search(state["customer_message"], k=RETRIEVAL_K)
-    #      retrieved = [
-    #          f"[{doc.metadata.get('source', 'unknown')}]\n{doc.page_content}"
-    #          for doc in docs
-    #      ]
-    #    On exception: print the error, set retrieved = []
-    #
-    # 4. Return {"retrieved_docs": retrieved}
-    # -----------------------------------------------------------------------
-    # TODO: implement this node
-    return {"retrieved_docs": []}
+    _init_vectorstore()
+    if vectorstore is None:
+        return {"retrieved_docs": []}
+    try:
+        docs = vectorstore.similarity_search(state["customer_message"], k=RETRIEVAL_K)
+        retrieved = [
+            f"[{doc.metadata.get('source', 'unknown')}]\n{doc.page_content}"
+            for doc in docs
+        ]
+    except Exception as e:
+        print(f"[ClinicalIQ] Retrieval error: {e}")
+        retrieved = []
+    return {"retrieved_docs": retrieved}
 
 
 def respond(state: ClinicalIQState) -> dict:
@@ -91,26 +85,18 @@ def respond(state: ClinicalIQState) -> dict:
     history   = state.get("history", [])
     retrieved = state.get("retrieved_docs", [])
 
-    # -----------------------------------------------------------------------
-    # TODO 3 of 4 -- Build system_content from retrieved docs
-    # -----------------------------------------------------------------------
-    # If retrieved is non-empty, prepend the chunks to the system prompt:
-    #
-    #   context_block  = "\n\n---\n\n".join(retrieved)
-    #   system_content = (
-    #       SYSTEM_PROMPT
-    #       + "\n\nThe following sections from Apollo Health Clinic's policy documents are relevant "
-    #       "to the patient's question. Use this information in your answer:\n\n"
-    #       + context_block
-    #   )
-    #
-    # Otherwise:
-    #   system_content = SYSTEM_PROMPT
-    #
-    # Then replace SYSTEM_PROMPT with system_content in the line below.
-    # -----------------------------------------------------------------------
-    # TODO: replace SYSTEM_PROMPT with system_content (built from retrieved)
-    messages = [SystemMessage(content=SYSTEM_PROMPT)]
+    if retrieved:
+        context_block  = "\n\n---\n\n".join(retrieved)
+        system_content = (
+            SYSTEM_PROMPT
+            + "\n\nThe following sections from Apollo Health Clinic's policy documents are relevant "
+            "to the patient's question. Use this information in your answer:\n\n"
+            + context_block
+        )
+    else:
+        system_content = SYSTEM_PROMPT
+
+    messages = [SystemMessage(content=system_content)]
     for turn in history:
         if turn["role"] == "user":
             messages.append(HumanMessage(content=turn["content"]))
@@ -157,4 +143,4 @@ def route_query(state: ClinicalIQState) -> str:
         return "escalate"
     if qt == "OUT_OF_SCOPE":
         return "decline"
-    return "respond"  # TODO 4: change "respond" to "retrieve_docs"
+    return "retrieve_docs"  # routes SIMPLE queries through RAG first
