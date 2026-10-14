@@ -76,7 +76,7 @@ LLAMAGUARD_MODEL_TOGETHER = "meta-llama/Meta-Llama-Guard-3-8B"
 LLAMAGUARD_MAX_TOKENS     = 20
 
 MODEL_NAME            = "openai/gpt-oss-120b"
-CLASSIFIER_MODEL      = "groq/compound-mini"
+CLASSIFIER_MODEL      = "openai/gpt-oss-20b"
 CLASSIFIER_MAX_TOKENS = 10
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300

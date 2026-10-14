@@ -19,13 +19,15 @@ from langgraph.graph import END, StateGraph
 
 from .config import CHECKPOINT_DB, MCP_SERVER_PATH
 from .nodes import (
-    # TODO: import blocked, guard, route_guard
+    blocked,
     call_compliance_agent,
     call_doctors_agent,
     call_services_agent,
     classify,
     decline,
     escalate,
+    guard,
+    route_guard,
     route_supervisor,
 )
 from .state import ClinicalIQState
@@ -35,6 +37,8 @@ def build_graph(checkpointer=None):
     builder = StateGraph(ClinicalIQState)
 
     # TODO: add "guard" and "blocked" nodes
+    builder.add_node("guard",                 guard)
+    builder.add_node("blocked",               blocked)
     builder.add_node("classify",              classify)
     builder.add_node("call_doctors_agent",    call_doctors_agent)
     builder.add_node("call_services_agent",   call_services_agent)
@@ -42,8 +46,13 @@ def build_graph(checkpointer=None):
     builder.add_node("escalate",              escalate)
     builder.add_node("decline",               decline)
 
-    # TODO: change entry point to "guard" and add guard conditional edges
-    builder.set_entry_point("classify")
+    builder.set_entry_point("guard")
+    builder.add_conditional_edges("guard", route_guard, {
+        "classify": "classify",
+        "blocked":  "blocked",
+    })
+    builder.add_edge("blocked", END)
+
     builder.add_conditional_edges("classify", route_supervisor, {
         "call_doctors_agent":  "call_doctors_agent",
         "call_services_agent": "call_services_agent",

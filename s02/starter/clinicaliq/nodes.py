@@ -16,38 +16,23 @@ from .tools import llm
 def respond(state: ClinicalIQState) -> dict:
     history = state.get("history", [])
 
-    # -----------------------------------------------------------------------
-    # TODO 3 of 4 -- Build the message list and update history
-    # -----------------------------------------------------------------------
-    # Step A: Build the message list for the LLM call.
-    #
-    #   messages = [SystemMessage(content=SYSTEM_PROMPT)]
-    #
-    #   Then loop over `history` and append each turn:
-    #     - {"role": "user", ...}      → HumanMessage(content=turn["content"])
-    #     - {"role": "assistant", ...} → AIMessage(content=turn["content"])
-    #
-    #   Finally append the new patient turn:
-    #     messages.append(HumanMessage(content=state["customer_message"]))
-    #
-    # Step B: Call the LLM.
-    #
-    #   try:
-    #       result = llm.invoke(messages)
-    #       response_text = result.content
-    #   except Exception as e:
-    #       print(f"[ClinicalIQ] LLM error: {e}")
-    #       response_text = "I am temporarily unavailable. Please try again in a moment."
-    #
-    # Step C: Append this turn to history and return both fields.
-    #
-    #   new_history = history + [
-    #       {"role": "user",      "content": state["customer_message"]},
-    #       {"role": "assistant", "content": response_text},
-    #   ]
-    #   return {"response": response_text, "history": new_history}
-    #
-    # -----------------------------------------------------------------------
-    # TODO: replace this placeholder with the implementation above
-    response_text = "TODO: implement respond()"
-    return {"response": response_text, "history": history}
+    messages = [SystemMessage(content=SYSTEM_PROMPT)]
+    for turn in history:
+        if turn["role"] == "user":
+            messages.append(HumanMessage(content=turn["content"]))
+        else:
+            messages.append(AIMessage(content=turn["content"]))
+    messages.append(HumanMessage(content=state["customer_message"]))
+
+    try:
+        result = llm.invoke(messages)
+        response_text = result.content
+    except Exception as e:
+        print(f"[ClinicalIQ] LLM error: {e}")
+        response_text = "I am temporarily unavailable. Please try again in a moment."
+
+    new_history = history + [
+        {"role": "user",      "content": state["customer_message"]},
+        {"role": "assistant", "content": response_text},
+    ]
+    return {"response": response_text, "history": new_history}

@@ -63,7 +63,13 @@ from clinicaliq.agent import build_graph  # noqa: E402
 #       }
 # ---------------------------------------------------------------------------
 def build_input_state(message: str) -> dict:
-    raise NotImplementedError("TODO 1: implement build_input_state()")
+    return {
+        "customer_message":  message,
+        "response":          "",
+        "specialist":        "",
+        "retrieved_docs":    [],
+        "compliance_status": "",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -77,7 +83,7 @@ def build_input_state(message: str) -> dict:
 #       return {"configurable": {"thread_id": thread_id}}
 # ---------------------------------------------------------------------------
 def get_thread_config(thread_id: str) -> dict:
-    raise NotImplementedError("TODO 2: implement get_thread_config()")
+    return {"configurable": {"thread_id": thread_id}}
 
 
 # ---------------------------------------------------------------------------
@@ -197,7 +203,14 @@ def main() -> None:
         #   st.session_state.messages.append({"role": "assistant", "content": response})
         #   st.session_state.routes.append(route_label)
         # ---------------------------------------------------------------------------
-        raise NotImplementedError("TODO 3: display the response")
+        with st.chat_message("assistant"):
+            if is_escalated(result):
+                st.warning(response)
+            else:
+                st.markdown(response)
+        st.caption(route_label)
+        st.session_state.messages.append({"role": "assistant", "content": response})
+        st.session_state.routes.append(route_label)
 
 
 if __name__ == "__main__":

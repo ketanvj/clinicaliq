@@ -1,0 +1,15 @@
+.env
+.venv
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.bak
+.git
+.gitignore
+.env.example
+*.db
+data/vectorstore/
+**/.pytest_cache
+**/tests/
+README.md

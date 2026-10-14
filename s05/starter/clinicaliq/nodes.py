@@ -98,27 +98,15 @@ def respond(state: ClinicalIQState) -> dict:
     try:
         result = llm_with_tools.invoke(messages)
 
-        # -----------------------------------------------------------------------
-        # TODO 4 of 4 -- Execute tool calls and make a second LLM call
-        # -----------------------------------------------------------------------
-        # If the LLM requested tool calls (result.tool_calls is non-empty):
-        #
-        # Step A: Append the assistant message to messages:
-        #           messages.append(result)
-        #
-        # Step B: For each tc in result.tool_calls:
-        #           tool_output = _run_tool(tc["name"], tc["args"])
-        #           print(f"[ClinicalIQ] Tool: {tc['name']}({tc['args']}) -> {str(tool_output)[:80]}")
-        #           messages.append(
-        #               ToolMessage(content=str(tool_output), tool_call_id=tc["id"])
-        #           )
-        #
-        # Step C: Make a second call (plain llm, no tools needed):
-        #           result = llm.invoke(messages)
-        #
-        # After the if-block: response_text = result.content
-        # -----------------------------------------------------------------------
-        # TODO: add the if result.tool_calls block here
+        if result.tool_calls:
+            messages.append(result)
+            for tc in result.tool_calls:
+                tool_output = _run_tool(tc["name"], tc["args"])
+                print(f"[ClinicalIQ] Tool: {tc['name']}({tc['args']}) -> {str(tool_output)[:80]}")
+                messages.append(
+                    ToolMessage(content=str(tool_output), tool_call_id=tc["id"])
+                )
+            result = llm.invoke(messages)
 
         response_text = result.content
 

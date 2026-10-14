@@ -73,9 +73,12 @@ _INVISIBLE_UNICODE_RE = re.compile(
 # ---------------------------------------------------------------------------
 
 def _llamaguard_safe(message: str) -> tuple[bool, float]:
-    # TODO: invoke llamaguard_llm, parse float score, return (safe, score)
-    # Fail-open on exception: return (True, -1.0)
-    raise NotImplementedError("Implement _llamaguard_safe")
+    try:
+        result = llamaguard_llm.invoke([HumanMessage(content=message)])
+        score = float(result.content.strip())
+        return score < LLAMAGUARD_THRESHOLD, score
+    except Exception:
+        return True, -1.0
 
 
 # ---------------------------------------------------------------------------
@@ -84,9 +87,25 @@ def _llamaguard_safe(message: str) -> tuple[bool, float]:
 
 @traceable(name="input_guard")
 def guard(state: ClinicalIQState) -> dict:
-    # TODO: Layer 1a (PII) → Layer 1b (injection) → Layer 2 (llamaguard)
-    # Strip invisible Unicode and NFKD-normalise first.
-    raise NotImplementedError("Implement guard")
+    raw = state["customer_message"]
+    msg = unicodedata.normalize("NFKD", _INVISIBLE_UNICODE_RE.sub("", raw))
+
+    for rx in _pii_compiled:
+        if rx.search(msg):
+            print("[ClinicalIQ] Guard: PII detected — blocked")
+            return {"blocked_reason": "pii", "llamaguard_score": -1.0}
+
+    for rx in _injection_compiled:
+        if rx.search(msg):
+            print("[ClinicalIQ] Guard: injection (regex) detected — blocked")
+            return {"blocked_reason": "injection", "llamaguard_score": -1.0}
+
+    safe, score = _llamaguard_safe(msg)
+    if not safe:
+        print("[ClinicalIQ] Guard: LlamaGuard flagged message — blocked")
+        return {"blocked_reason": "llamaguard", "llamaguard_score": score}
+
+    return {"blocked_reason": "", "llamaguard_score": score}
 
 
 # ---------------------------------------------------------------------------
@@ -94,8 +113,21 @@ def guard(state: ClinicalIQState) -> dict:
 # ---------------------------------------------------------------------------
 
 def blocked(state: ClinicalIQState) -> dict:
-    # TODO: return correct canned response based on state["blocked_reason"]
-    raise NotImplementedError("Implement blocked")
+    reason = state.get("blocked_reason", "injection")
+    if reason == "pii":
+        response = GUARD_PII_RESPONSE
+    elif reason == "llamaguard":
+        response = GUARD_UNSAFE_RESPONSE
+    else:
+        response = GUARD_BLOCKED_RESPONSE
+    return {
+        "response":   response,
+        "specialist": "guard",
+        "history": state.get("history", []) + [
+            {"role": "user",      "content": state["customer_message"]},
+            {"role": "assistant", "content": response},
+        ],
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -103,8 +135,7 @@ def blocked(state: ClinicalIQState) -> dict:
 # ---------------------------------------------------------------------------
 
 def route_guard(state: ClinicalIQState) -> str:
-    # TODO: return "blocked" or "classify"
-    raise NotImplementedError("Implement route_guard")
+    return "blocked" if state.get("blocked_reason") else "classify"
 
 
 # ---------------------------------------------------------------------------

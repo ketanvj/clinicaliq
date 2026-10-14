@@ -49,15 +49,7 @@ def build_graph(checkpointer=None):
     builder.add_node("escalate",      escalate)
     builder.add_node("decline",       decline)
 
-    # ---------------------------------------------------------------------------
-    # TODO 3 of 3 -- Wire check_compliance into the graph
-    # ---------------------------------------------------------------------------
-    # 1. Add the node:
-    #      builder.add_node("check_compliance", check_compliance)
-    # 2. Replace the direct respond→END edge with:
-    #      builder.add_edge("respond",          "check_compliance")
-    #      builder.add_edge("check_compliance", END)
-    # ---------------------------------------------------------------------------
+    builder.add_node("check_compliance", check_compliance)
 
     builder.set_entry_point("classify")
     builder.add_conditional_edges("classify", route_query, {
@@ -66,10 +58,11 @@ def build_graph(checkpointer=None):
         "decline":       "decline",
     })
 
-    builder.add_edge("retrieve_docs", "respond")
-    builder.add_edge("respond",       END)  # TODO 3: route through check_compliance first
-    builder.add_edge("escalate",      END)
-    builder.add_edge("decline",       END)
+    builder.add_edge("retrieve_docs",    "respond")
+    builder.add_edge("respond",          "check_compliance")
+    builder.add_edge("check_compliance", END)
+    builder.add_edge("escalate",         END)
+    builder.add_edge("decline",          END)
 
     return builder.compile(checkpointer=checkpointer)
 

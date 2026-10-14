@@ -59,7 +59,13 @@ classifier_llm = ChatGroq(
 #       }
 #   })
 # ---------------------------------------------------------------------------
-_mcp_client = None  # TODO 1: replace with a MultiServerMCPClient(...) instance
+_mcp_client = MultiServerMCPClient({
+    "clinicaliq": {
+        "transport": "stdio",
+        "command": sys.executable,
+        "args": [str(MCP_SERVER_PATH)],
+    }
+})
 
 
 # ---------------------------------------------------------------------------
@@ -69,9 +75,9 @@ _mcp_client = None  # TODO 1: replace with a MultiServerMCPClient(...) instance
 #   _tool_registry = {t.name: t for t in mcp_tools}
 #   llm_with_tools = llm.bind_tools(mcp_tools)
 # ---------------------------------------------------------------------------
-mcp_tools      = []    # TODO 2: replace with asyncio.run(_mcp_client.get_tools())
-_tool_registry = {}    # TODO 2: replace with {t.name: t for t in mcp_tools}
-llm_with_tools = None  # TODO 2: replace with llm.bind_tools(mcp_tools)
+mcp_tools      = asyncio.run(_mcp_client.get_tools())
+_tool_registry = {t.name: t for t in mcp_tools}
+llm_with_tools = llm.bind_tools(mcp_tools)
 
 
 def _extract_text(result) -> str:
@@ -96,4 +102,10 @@ def _extract_text(result) -> str:
 #           return f"Tool error ({tool_name}): {e}"
 # ---------------------------------------------------------------------------
 def _run_tool(tool_name: str, tool_args: dict) -> str:
-    raise NotImplementedError("TODO 3: implement _run_tool()")
+    if tool_name not in _tool_registry:
+        return f"Unknown tool: {tool_name}"
+    try:
+        result = asyncio.run(_tool_registry[tool_name].ainvoke(tool_args))
+        return _extract_text(result)
+    except Exception as e:
+        return f"Tool error ({tool_name}): {e}"

@@ -69,9 +69,9 @@ def build_graph(checkpointer=None):
     #   builder.add_edge("call_services_agent",  "call_compliance_agent")
     #   builder.add_edge("call_compliance_agent", END)
     # ---------------------------------------------------------------------------
-    builder.add_edge("call_doctors_agent",  END)   # TODO: change to "call_compliance_agent"
-    builder.add_edge("call_services_agent", END)   # TODO: change to "call_compliance_agent"
-    # builder.add_edge("call_compliance_agent", END)  # TODO: uncomment this line
+    builder.add_edge("call_doctors_agent",   "call_compliance_agent")
+    builder.add_edge("call_services_agent",  "call_compliance_agent")
+    builder.add_edge("call_compliance_agent", END)
 
     builder.add_edge("escalate", END)
     builder.add_edge("decline",  END)

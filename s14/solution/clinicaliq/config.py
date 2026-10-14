@@ -11,7 +11,7 @@ if not GROQ_API_KEY:
     )
 
 MODEL_NAME            = "openai/gpt-oss-120b"
-CLASSIFIER_MODEL      = "groq/compound-mini"
+CLASSIFIER_MODEL      = "openai/gpt-oss-20b"
 CLASSIFIER_MAX_TOKENS = 10
 TEMPERATURE = 0.3
 MAX_TOKENS  = 300
