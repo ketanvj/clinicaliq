@@ -18,7 +18,6 @@ htmlcov/
 .langgraph_api/
 
 # Editor
-.vscode/settings.json
 .idea/
 
 # OS
