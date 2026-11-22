@@ -27,6 +27,9 @@ pydantic>=2.0.0                        # state validation, structured outputs
 # --- Session 4+: Vector store and RAG ---
 chromadb>=0.5.0
 langchain-chroma>=0.1.4
+# chromadb 1.x requires opentelemetry 1.28+; pin both to prevent version mismatch
+opentelemetry-api>=1.28.0
+opentelemetry-sdk>=1.28.0
 langchain-huggingface>=0.0.3           # free local embeddings (all-MiniLM-L6-v2)
 sentence-transformers>=2.7.0           # backing library for HuggingFaceEmbeddings
 langchain-community>=0.2.0             # TextLoader and other document loaders
@@ -39,7 +42,12 @@ langchain-openai>=0.1.0
 langsmith>=0.1.0
 
 # --- Session 7+: MCP (Model Context Protocol) ---
-mcp>=1.0.0
+# mcp 2.x required by fastmcp 4.x; mcp_server.py uses `from fastmcp import FastMCP`
+mcp>=2.0.0,<3.0
+fastmcp>=4.0.0,<5.0
+
+# --- Session 8+: MCP agent tool loading (langchain[mcp] >=1.4.0) ---
+langchain[mcp]>=1.4.0,<2.0
 
 # --- Session 13+: Web UI ---
 streamlit>=1.35.0
